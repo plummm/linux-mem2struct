@@ -118,12 +118,13 @@ class NetlinkTranslator(BaseTranslator):
         return code + '\n'
 
     def build_nmsg(self, mem) -> str:
-        if self.nlh["nlmsg_type"] == 44:
-            code = self._build_tcmsg(mem)
-            self.nmsg_size = 20 # 4 bytes padding
-            self.attr_addr = self.nmsg_addr + self.nmsg_size # 4 bytes padding
-            self.attr_len = self.nlh["nlmsg_len"] - 16 - self.nmsg_size
-            return code + '\n'
+        if self.nlh["nlmsg_type"] != 44:
+            print("Unsupported nlmsg_type [{}]".format(hex(self.nlh["nlmsg_type"])))
+        code = self._build_tcmsg(mem)
+        self.nmsg_size = 20 # 4 bytes padding
+        self.attr_addr = self.nmsg_addr + self.nmsg_size # 4 bytes padding
+        self.attr_len = self.nlh["nlmsg_len"] - 16 - self.nmsg_size
+        return code + '\n'
             
     def build_attr(self, mem) -> str:
         """
@@ -132,6 +133,9 @@ class NetlinkTranslator(BaseTranslator):
         --------
         appending data
         """
+        if hasattr(self, "nmsg_size") == False:
+            print("message attributes will not be completed. Truncated code will be generated.")
+            return ""
         n = 0
         code = "struct rtattr *rta{} = (struct rtattr*)(NLMSG_DATA(nlh)+{});\n".format(n, self.nmsg_size)
         
